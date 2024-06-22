@@ -1,4 +1,4 @@
-# SharePoint Connector
+# Python SharePoint Connector
 
 This repository includes a Python script designed to connect to a SharePoint site and execute various REST API operations, such as creating sites and lists, uploading attachments, and managing SharePoint lists and so on. It works as long as your account has the necessary permissions to perform the actions and Microsoft provides the corresponding REST API. This method does not require admin center permissions or access, such as PowerShell PnP or SharePoint Management Shell, and it doesn't need any Azure app registration.
 
