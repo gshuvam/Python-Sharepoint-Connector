@@ -1,9 +1,7 @@
 import time
 import requests
 from connector.sharepoint_connector import SharePointConnector
-from .sharepoint_operations import download_attachments, upload_attachments
-from utils.methods import Utils
-
+from sharepoint_operations import SharePointOperations
 
 class BaseList:
 
@@ -228,7 +226,7 @@ class List(BaseList):
             #Uploading attachments (if applicable)
             if attachment_list:
                 self.logger.info("Attempting to upload attachments...")
-                self.upload_attachments(
+                SharePointOperations.upload_attachments(
                     self.site_url, self.list_name, item_id, attachment_list
                 )
             items_to_be_inserted -= 1
@@ -306,14 +304,14 @@ class List(BaseList):
 
                     if attchment_upload_mode == 'REPLACE':
                         self.logger.info("Attempting to delete existing attachment(s)")
-                        self.delete_attachments(
+                        SharePointOperations.delete_attachments(
                             self.site_url,
                             self.list_name,
                             item_id
                         )
 
                     self.logger.info("Attempting to upload new attachments...")
-                    self.upload_attachments(
+                    SharePointOperations.upload_attachments(
                         self.site_url,
                         self.list_name,
                         item_id,
