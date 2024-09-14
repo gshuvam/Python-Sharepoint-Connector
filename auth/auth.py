@@ -149,6 +149,23 @@ class LoginHandler:
         return cookie_dict
     
     def __get_version_main():
+
+        def get_version_via_subprocess(filename):
+            try:
+                if os.name == 'nt':
+                    result = subprocess.run(['wmic', 'datafile', 'where', f'name="{filename}"', 'get', 'Version', '/value'],
+                                            stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, shell=True)
+                    version = re.search(r'Version=([\d.]+)', result.stdout)
+                    return version.group(1) if version else None
+
+                elif os.path.exists(filename):
+                    result = subprocess.run(['strings', filename], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+                    version = re.search(r'[\d.]+', result.stdout)
+                    return version.group(0) if version else None
+
+            except Exception:
+                return None
+
         paths = [
             "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
             "/usr/bin/google-chrome",
@@ -161,19 +178,3 @@ class LoginHandler:
         if version:
             return int(version[0].split('.')[0])
         return None
-    
-    def get_version_via_subprocess(filename):
-        try:
-            if os.name == 'nt':
-                result = subprocess.run(['wmic', 'datafile', 'where', f'name="{filename}"', 'get', 'Version', '/value'],
-                                        stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, shell=True)
-                version = re.search(r'Version=([\d.]+)', result.stdout)
-                return version.group(1) if version else None
-
-            elif os.path.exists(filename):
-                result = subprocess.run(['strings', filename], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-                version = re.search(r'[\d.]+', result.stdout)
-                return version.group(0) if version else None
-
-        except Exception:
-            return None
