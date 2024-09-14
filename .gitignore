@@ -1,3 +1,10 @@
 .env
 dev.py
 cache/
+__pycache__/
+auth/__pycache__/
+connector/__pycache__/
+gui/__pycache__/
+logger/__pycache__/
+sharepoint/__pycache__/
+utils/__pycache__/
