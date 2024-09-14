@@ -1,4 +1,5 @@
 .env
+*.ini
 dev.py
 cache/
 __pycache__/
