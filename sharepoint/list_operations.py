@@ -8,9 +8,6 @@ from requests import Session
 
 class ListOperations:
     @staticmethod
-
-
-    @staticmethod
     def get_list_property(
         site_url: str, list_name: str, session: requests.Session, property_name: str
     ) -> str:
@@ -99,40 +96,28 @@ class ListOperations:
         return data
 
     @staticmethod
-    def insert_items(insert_list):
-        request_digest = self.digest_value
-        time.sleep(1)
-        headers = {
-            "Accept": "application/json; odata=verbose",
-            "Content-Type": "application/json; odata=verbose",
-            "X-RequestDigest": request_digest,
-        }
-        items_to_be_inserted = len(insert_list)
-        self.logger.info("Starting insertion...")
-
-        processed_insert_list = self.prepare_data(insert_list)
-
-        for item in processed_insert_list:
-            idetifier = item["Title"]
-            payload = {"__metadata": {"type": self.list_item_data_type}}
-
-            if items_to_be_inserted % 100 == 0:
-                self.logger.info("Waiting for some time to avoid MS timeout")
-                time.sleep(30)
-            if items_to_be_inserted % 10 == 0:
-                self.logger.info("Items left for insertion %s", items_to_be_inserted)
-
-            for key, value in item.items():
-                payload[key] = value
-
-            response = self.session.post(
-                f"{self.site_url}/_api/web/lists/getbytitle('{self.list_name}')/items",
-                headers=headers,
-                json=payload,
-            )
-            response.raise_for_status()
-            time.sleep(2)
-            self.logger.success("Successfully inserted item %s", idetifier)
-            if response.status_code != 201:
-                self.logger.error("Unable to add item %s", response.json())
-            items_to_be_inserted -= 1
+    def create_simplified_list(self, site_url, list_name, list_data, required_cols):
+        items_list = []
+        for row in list_data:
+            list_item_dict = {}
+            column_display_names = list(required_cols.keys())
+            for col in column_display_names:
+                # adding Id
+                if col == "Id":
+                    row_id = row["Id"]
+                    list_item_dict["Id"] = row_id
+                # adding attachments
+                elif col == "Modified":
+                    list_item_dict["Modified"] = row["Modified"]
+                elif col == "Attachment List":
+                    attachemts = []
+                    if row["Attachments"]:
+                        attachemts = self.get_attachments(
+                            site_url=site_url, list_name=list_name, item_id=row_id
+                        )
+                        time.sleep(2)
+                    list_item_dict["Attachment List"] = attachemts
+                else:
+                    list_item_dict[col] = row[required_cols[col]["Internal Name"]]
+            items_list.append(list_item_dict)
+        return items_list

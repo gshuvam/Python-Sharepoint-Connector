@@ -5,7 +5,7 @@ class SharePointConnector:
     def __init__(self, site_url, cookie_dict):
         self.logger = get_logger(self.__class__.__name__)
         self.site_url = site_url
-        self.cookie_dict = cookie_dict
+        self.cookie_dict = cookie_dict 
         self.session = self.__create_session()
         self.digest_value = self.__get_form_digest_value(site_url)
 
