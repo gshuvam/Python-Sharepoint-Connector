@@ -1,12 +1,38 @@
 import logging
 import time
-import json
 import requests
-import pandas as pd
 from requests import Session
 
 
 class ListOperations:
+    @staticmethod
+    def get_required_columns(
+        site_url: str, list_name: str, session: requests.Session
+    ) -> dict[dict]:
+        required_cols = {}
+        required_cols["Id"] = {}
+
+        headers = {"Accept": "application/json; odata=verbose"}
+        endpoint = f"{site_url}/_api/web/lists/getbytitle('{list_name}')/fields?$filter=Hidden eq false and ReadOnlyField eq false"
+
+        response = session.get(endpoint, headers=headers)
+        response.raise_for_status()
+        data = response.json()
+        columns_info = data.get("d", {}).get("results", [])
+        for column in columns_info:
+            title = column["Title"]
+            internal_name = column["EntityPropertyName"]
+            data_type = column["TypeAsString"]
+            if column["FieldTypeKind"] in [20, 7]:
+                internal_name += "Id"
+            if internal_name not in ["ContentType"]:
+                required_cols[title] = {
+                    "Internal Name": internal_name,
+                    "Data Type": data_type,
+                }
+
+        return required_cols
+
     @staticmethod
     def get_list_property(
         site_url: str, list_name: str, session: requests.Session, property_name: str
@@ -64,25 +90,32 @@ class ListOperations:
         else:
             logger.success("No items in the list.")
         return all_items
-
+    
     @staticmethod
-    def create_simplified_list(list_data: list, required_cols: dict) -> list[dict]:
-        items_list = []
-        for row in list_data:
-            list_item_dict = {}
-            column_display_names = list(required_cols.keys())
-            for col in column_display_names:
-                # adding Id
-                if col == "Id":
-                    row_id = row["Id"]
-                    list_item_dict["Id"] = row_id
-                # adding attachments
-                elif col == "Modified":
-                    list_item_dict["Modified"] = row["Modified"]
-                else:
-                    list_item_dict[col] = row[required_cols[col]["Internal Name"]]
-            items_list.append(list_item_dict)
-        return items_list
+    def get_column_datatypes(site_url:str, list_name:str, session:requests.Session) -> dict:
+        required_cols = {}
+
+        headers = {"Accept": "application/json; odata=verbose"}
+        endpoint = f"{site_url}/_api/web/lists/getbytitle('{list_name}')/fields?$filter=Hidden eq false and ReadOnlyField eq false"
+
+        response = session.get(endpoint, headers=headers)
+        response.raise_for_status()
+        data = response.json()
+        columns_info = data.get("d", {}).get("results", [])
+        for column in columns_info:
+            title = column["Title"]
+            internal_name = column["EntityPropertyName"]
+            data_type = column["TypeAsString"]
+            if column["FieldTypeKind"] == 20:
+                internal_name += "Id"
+            if internal_name not in ["ContentType"]:
+                required_cols[title] = {
+                    "Internal Name": internal_name,
+                    "Data Type": data_type,
+                }
+        time.sleep(0.5)
+
+        return required_cols
 
     @staticmethod
     def prepare_data(
@@ -115,7 +148,7 @@ class ListOperations:
                         attachemts = self.get_attachments(
                             site_url=site_url, list_name=list_name, item_id=row_id
                         )
-                        time.sleep(2)
+                        time.sleep(1)
                     list_item_dict["Attachment List"] = attachemts
                 else:
                     list_item_dict[col] = row[required_cols[col]["Internal Name"]]

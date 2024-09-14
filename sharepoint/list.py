@@ -24,7 +24,7 @@ class BaseList:
         self.session = sharepoint_connector_object.session
         self.digest_value = sharepoint_connector_object.digest_value
         self.list_item_dtype_property_name = "ListItemEntityTypeFullName"
-        self.list_item_data_type = self.get_list_property(self.list_item_property_name)
+        self.list_data_type = self.get_list_property(self.list_item_property_name)
         self.column_datatypes = self.__get_column_datatypes()
 
     def get_list_items(self, query=None) -> list:
