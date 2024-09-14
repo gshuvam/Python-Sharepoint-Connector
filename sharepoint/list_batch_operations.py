@@ -1,9 +1,12 @@
 import uuid
 from requests import Session
 from sharepoint.list_operations import ListOperations
-
+from logger.custom_logger import get_logger
 
 class BatchOperations:
+
+    logger = get_logger('BatchOperations')
+
     @staticmethod
     def __get_request_digest(site_url: str, session: Session) -> str:
         headers = {
@@ -57,6 +60,7 @@ class BatchOperations:
             "Accept": "application/json;odata=verbose",
             "Content-Type": "application/json;odata=verbose",
         }
+        batch_no = 1
         for i in range(0, len(items), batch_size):
             batch_guid = str(uuid.uuid4())
             batch_items = items[i : i + batch_size]
@@ -84,6 +88,8 @@ class BatchOperations:
                 batch_endpoint, headers=batch_headers, data=batch_body
             )
             response.raise_for_status()
+            BatchOperations.logger.success('Processed batch %s successfully', batch_no)
+            batch_no += 1
 
     @staticmethod
     def __create_insert_batch(
@@ -140,6 +146,7 @@ class BatchOperations:
             "Accept": "application/json;odata=verbose",
             "Content-Type": "application/json;odata=verbose",
         }
+        batch_no = 1
         for i in range(0, len(items), batch_size):
             batch_guid = str(uuid.uuid4())
             batch_items = items[i : i + batch_size]
@@ -167,6 +174,8 @@ class BatchOperations:
                 batch_endpoint, headers=batch_headers, data=batch_body
             )
             response.raise_for_status()
+            BatchOperations.logger.success('Processed batch %s successfully', batch_no)
+            batch_no += 1
 
     @staticmethod
     def __create_update_batch(
@@ -234,6 +243,7 @@ class BatchOperations:
             "Accept": "application/json;odata=verbose",
             "Content-Type": "application/json;odata=verbose",
         }
+        batch_no = 1
         for batch in dict_batches(items, batch_size):
             batch_guid = str(uuid.uuid4())
             batch_body = BatchOperations.__create_update_batch(
@@ -260,3 +270,5 @@ class BatchOperations:
                 batch_endpoint, headers=batch_headers, data=batch_body
             )
             response.raise_for_status()
+            BatchOperations.logger.success('Processed batch %s successfully', batch_no)
+            batch_no += 1

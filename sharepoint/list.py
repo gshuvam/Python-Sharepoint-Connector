@@ -1,5 +1,6 @@
 import time
 import requests
+from logger.custom_logger import get_logger
 from connector.sharepoint_connector import SharePointConnector
 from sharepoint_operations import SharePointOperations
 
@@ -26,6 +27,7 @@ class BaseList:
         self.list_item_dtype_property_name = "ListItemEntityTypeFullName"
         self.list_data_type = self.get_list_property(self.list_item_property_name)
         self.column_datatypes = self.__get_column_datatypes()
+        self.logger = get_logger(self.__class__.__name__)
 
     def get_list_items(self, query=None) -> list:
         endpoint = (
@@ -319,7 +321,7 @@ class List(BaseList):
                     )
 
             if response.status_code != 204:
-                print(f"Failed to add item: {response.content}")
+                self.logger.error(f"Failed to add item: {response.content}")
 
     def delete_list_items(self, delete_list:list[dict]) -> None:
         request_digest = self.digest_value

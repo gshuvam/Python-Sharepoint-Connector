@@ -1,10 +1,13 @@
-import logging
 import time
 import requests
 from requests import Session
+from logger.custom_logger import get_logger
 
 
 class ListOperations:
+
+    logger = get_logger('ListOperations')
+
     @staticmethod
     def get_required_columns(
         site_url: str, list_name: str, session: requests.Session
@@ -63,7 +66,7 @@ class ListOperations:
 
     @staticmethod
     def get_list_items(
-        site_url: str, list_name: str, session: requests.Session, logger: logging.Logger
+        site_url: str, list_name: str, session: requests.Session
     ) -> list[dict]:
         headers = {"Accept": "application/json; odata=verbose"}
         endpoint = f"{site_url}/_api/web/lists/getbytitle('{list_name}')/items"
@@ -79,16 +82,16 @@ class ListOperations:
 
                 endpoint = data.get("d", {}).get("__next", None)
             elif response.status_code == 404:
-                logger.critical("List not found! Please double check your list name.")
+                ListOperations.logger.critical("List not found! Please double check your list name.")
                 exit()
             else:
-                print("Something went wrong!")
+                ListOperations.logger.error("Something went wrong!")
             time.sleep(2)
         items_retrieved = len(all_items)
         if items_retrieved > 0:
-            logger.success("Total %s items retrieved", items_retrieved)
+            ListOperations.logger.success("Total %s items retrieved", items_retrieved)
         else:
-            logger.success("No items in the list.")
+            ListOperations.logger.success("No items in the list.")
         return all_items
     
     @staticmethod

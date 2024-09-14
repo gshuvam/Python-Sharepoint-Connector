@@ -1,6 +1,10 @@
 import requests
+from logger.custom_logger import get_logger
 
 class SharePointOperations:
+
+    logger = get_logger('SharePointOperations')
+
     @staticmethod
     def get_attachments(
         site_url: str, source_name: str, item_id: int, session: requests.Session
@@ -39,7 +43,7 @@ class SharePointOperations:
                 with open(f"{download_location}\\{filename}", "wb") as f:
                     f.write(response.content)
             else:
-                print(response.status_code)
+                SharePointOperations.logger.error('Something went wrong! %s', response.json())
 
     @staticmethod
     def upload_attachments(
@@ -59,7 +63,7 @@ class SharePointOperations:
         attachments_to_be_uploaded = len(attachment_list)
 
         for file in attachment_list:
-            print("Attachments left for insertion %s", attachments_to_be_uploaded)
+            SharePointOperations.logger.info("Attachments left for insertion %s", attachments_to_be_uploaded)
             file_name = file.split("/")[-1]
 
             with open(file, "rb") as f:
@@ -71,9 +75,9 @@ class SharePointOperations:
                 response.raise_for_status()
 
             if response.status_code != 200:
-                print("Failed to upload %s", file_name)
+                SharePointOperations.logger.error("Failed to upload %s", file_name)
             else:
-                print("Uploaded attachment %s", file_name)
+                SharePointOperations.logger.success("Uploaded attachment %s", file_name)
             attachments_to_be_uploaded -= 1
 
     def delete_attachments(
@@ -100,6 +104,6 @@ class SharePointOperations:
             )
             response.raise_for_status()
             if not response.status_code == 200:
-                print("Failed to delete old attachment %s", filename)
+                SharePointOperations.logger.error("Failed to delete old attachment %s", filename)
             else:
-                print("Successfully deleted old attachment %s", filename)
+                SharePointOperations.logger.success("Successfully deleted attachment %s", filename)
