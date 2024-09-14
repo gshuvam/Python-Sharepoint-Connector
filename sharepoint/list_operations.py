@@ -8,32 +8,7 @@ from requests import Session
 
 class ListOperations:
     @staticmethod
-    def get_required_columns(
-        site_url: str, list_name: str, session: requests.Session
-    ) -> dict[dict]:
-        required_cols = {}
-        required_cols["Id"] = {}
 
-        headers = {"Accept": "application/json; odata=verbose"}
-        endpoint = f"{site_url}/_api/web/lists/getbytitle('{list_name}')/fields?$filter=Hidden eq false and ReadOnlyField eq false"
-
-        response = session.get(endpoint, headers=headers)
-        response.raise_for_status()
-        data = response.json()
-        columns_info = data.get("d", {}).get("results", [])
-        for column in columns_info:
-            title = column["Title"]
-            internal_name = column["EntityPropertyName"]
-            data_type = column["TypeAsString"]
-            if column["FieldTypeKind"] in [20, 7]:
-                internal_name += "Id"
-            if internal_name not in ["ContentType"]:
-                required_cols[title] = {
-                    "Internal Name": internal_name,
-                    "Data Type": data_type,
-                }
-
-        return required_cols
 
     @staticmethod
     def get_list_property(

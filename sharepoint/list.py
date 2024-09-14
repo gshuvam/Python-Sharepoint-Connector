@@ -1,96 +1,25 @@
 import time
-from connector.sharepoint_connector import SharePointConnector
+import requests
 
-class List(SharePointConnector):
-    def __init__(self, site_url, list_name, cookie_dict):
-        super().__init__(
-            site_url=site_url,
-            cookie_dict=cookie_dict
-        )
-        self.list_name = list_name
-        self.list_item_dtype_property_name = 'ListItemEntityTypeFullName'
+
+class BaseList:
+    def __init__(self, site_url: str, list_name: str, session: requests.Session):
+        self.site_url = (site_url,)
+        self.list_name = (list_name,)
+        self.session = session
+        self.list_item_dtype_property_name = "ListItemEntityTypeFullName"
         self.list_item_data_type = self.get_list_property(self.list_item_property_name)
-        self.list_column_internal_name_mapping = self.__get_field_mappings()
         self.column_datatypes = self.__get_column_datatypes()
 
-
-    def insert_items(self, insert_list):
-        self.logger.info('Total items retrieved from excel: %s', len(insert_list))
-        request_digest = self.digest_value
-        time.sleep(1)
+    def get_list_items(self, query=None) -> list:
+        endpoint = (
+            f"{self.site_url}/_api/web/lists/getbytitle('{self.list_name}')/items"
+        )
+        if query:
+            endpoint += query
         headers = {
-            "Accept": "application/json; odata=verbose",
-            "Content-Type": "application/json; odata=verbose",
-            "X-RequestDigest": request_digest
-        }
-        items_to_be_inserted = len(insert_list)
-        self.logger.info('Starting insertion...')
-
-        processed_insert_list = self.prepare_data(insert_list)
-        
-        for item in processed_insert_list:
-            idetifier = item['Title']
-            payload = {
-            '__metadata': {'type': self.list_item_data_type}
-            }
-
-            if items_to_be_inserted % 100 == 0:
-                self.logger.info('Waiting for some time to avoid MS timeout')
-                time.sleep(30)
-            if items_to_be_inserted % 10 == 0:
-                self.logger.info('Items left for insertion %s', items_to_be_inserted)
-
-            for key, value in item.items():
-                payload[key] = value
-
-            response = self.session.post(
-                f"{self.site_url}/_api/web/lists/getbytitle('{self.list_name}')/items",
-                headers=headers,
-                json=payload
-            )
-            response.raise_for_status()
-            time.sleep(2)
-            self.logger.success('Successfully inserted item %s', idetifier)
-            if response.status_code != 201:
-                self.logger.error('Unable to add item %s', response.json())
-            items_to_be_inserted -= 1
-
-
-    def get_list_property(self, property_name):
-        endpoint = f"{self.site_url}/_api/web/lists/getbytitle('{self.list_name}')"
-        headers = {
-            'Accept': 'application/json;odata=verbose',
-            'Content-Type': 'application/json;odata=verbose',
-        }
-
-        response = self.session.get(endpoint, headers=headers)
-        response.raise_for_status()
-        data = response.json()
-        output = data.get('d', {}).get(property_name, None)
-        time.sleep(0.5)
-        return output
-        
-    def __get_field_mappings(self):
-        endpoint = f"{self.site_url}/_api/web/lists/getbytitle('{self.list_name}')/fields?$filter=Hidden eq false and ReadOnlyField eq false"
-        headers = {
-        'Accept': 'application/json;odata=verbose',
-        'Content-Type': 'application/json;odata=verbose',
-        }
-
-        response = self.session.get(endpoint, headers=headers)
-        response.raise_for_status()
-        data = response.json()
-
-        fields = data.get('d', {}).get('results', [])
-        field_mappings = {field['Title']: field['InternalName'] for field in fields}
-        time.sleep(0.5)
-        return field_mappings
-    
-    def get_list_items(self):
-        endpoint = f"{self.site_url}/_api/web/lists/getbytitle('{self.list_name}')/items"
-        headers = {
-        'Accept': 'application/json;odata=verbose',
-        'Content-Type': 'application/json;odata=verbose',
+            "Accept": "application/json;odata=verbose",
+            "Content-Type": "application/json;odata=verbose",
         }
 
         all_items = []
@@ -104,7 +33,9 @@ class List(SharePointConnector):
 
                 endpoint = data.get("d", {}).get("__next", None)
             elif response.status_code == 404:
-                self.logger.critical("List not found! Please double check your list name.")
+                self.logger.critical(
+                    "List not found! Please double check your list name."
+                )
                 exit()
             else:
                 self.logger.critical("Something went wrong!")
@@ -113,7 +44,47 @@ class List(SharePointConnector):
         self.logger.success("Total %s items retrieved from the List", items_retrieved)
 
         return all_items
-    
+
+    def get_list_property(self, property_name):
+        endpoint = f"{self.site_url}/_api/web/lists/getbytitle('{self.list_name}')"
+        headers = {
+            "Accept": "application/json;odata=verbose",
+            "Content-Type": "application/json;odata=verbose",
+        }
+
+        response = self.session.get(endpoint, headers=headers)
+        response.raise_for_status()
+        data = response.json()
+        output = data.get("d", {}).get(property_name, None)
+        time.sleep(0.5)
+
+        return output
+
+    def get_required_columns(self) -> dict[dict]:
+        required_cols = {}
+        required_cols["Id"] = {}
+
+        headers = {"Accept": "application/json; odata=verbose"}
+        endpoint = f"{self.site_url}/_api/web/lists/getbytitle('{self.list_name}')/fields?$filter=Hidden eq false and ReadOnlyField eq false"
+
+        response = self.session.get(endpoint, headers=headers)
+        response.raise_for_status()
+        data = response.json()
+        columns_info = data.get("d", {}).get("results", [])
+        for column in columns_info:
+            title = column["Title"]
+            internal_name = column["EntityPropertyName"]
+            data_type = column["TypeAsString"]
+            if column["FieldTypeKind"] in [20, 7]:
+                internal_name += "Id"
+            if internal_name not in ["ContentType"]:
+                required_cols[title] = {
+                    "Internal Name": internal_name,
+                    "Data Type": data_type,
+                }
+
+        return required_cols
+
     def __get_column_datatypes(self):
         required_cols = {}
 
@@ -130,34 +101,98 @@ class List(SharePointConnector):
             data_type = column["TypeAsString"]
             if column["FieldTypeKind"] == 20:
                 internal_name += "Id"
-            if internal_name not in ['ContentType']:
-                required_cols[title] = {"Internal Name": internal_name, "Data Type": data_type}
+            if internal_name not in ["ContentType"]:
+                required_cols[title] = {
+                    "Internal Name": internal_name,
+                    "Data Type": data_type,
+                }
         time.sleep(0.5)
 
         return required_cols
-    
-    def prepare_data(self, insert_list):
+
+
+class List(BaseList):
+    def __init__(self, site_url: str, list_name: str, session: requests.Session):
+        super().__init__(site_url, list_name, session)
+        self.column_name_mappings = self.__get_column_name_mappings()
+
+    def insert_items(self, insert_list):
+        self.logger.info("Total items retrieved from excel: %s", len(insert_list))
+        request_digest = self.digest_value
+        time.sleep(1)
+        headers = {
+            "Accept": "application/json; odata=verbose",
+            "Content-Type": "application/json; odata=verbose",
+            "X-RequestDigest": request_digest,
+        }
+        items_to_be_inserted = len(insert_list)
+        self.logger.info("Starting insertion...")
+
+        processed_insert_list = self.prepare_data(insert_list)
+
+        for item in processed_insert_list:
+            idetifier = item["Title"]
+            payload = {"__metadata": {"type": self.list_item_data_type}}
+
+            if items_to_be_inserted % 100 == 0:
+                self.logger.info("Waiting for some time to avoid MS timeout")
+                time.sleep(30)
+            if items_to_be_inserted % 10 == 0:
+                self.logger.info("Items left for insertion %s", items_to_be_inserted)
+
+            for key, value in item.items():
+                payload[key] = value
+
+            response = self.session.post(
+                f"{self.site_url}/_api/web/lists/getbytitle('{self.list_name}')/items",
+                headers=headers,
+                json=payload,
+            )
+            response.raise_for_status()
+            time.sleep(2)
+            self.logger.success("Successfully inserted item %s", idetifier)
+            if response.status_code != 201:
+                self.logger.error("Unable to add item %s", response.json())
+            items_to_be_inserted -= 1
+
+    def __get_column_name_mappings(self) -> dict:
+        endpoint = f"{self.site_url}/_api/web/lists/getbytitle('{self.list_name}')/fields?$filter=Hidden eq false and ReadOnlyField eq false"
+        headers = {
+            "Accept": "application/json;odata=verbose",
+            "Content-Type": "application/json;odata=verbose",
+        }
+
+        response = self.session.get(endpoint, headers=headers)
+        response.raise_for_status()
+        data = response.json()
+
+        fields = data.get("d", {}).get("results", [])
+        field_mappings = {field["Title"]: field["InternalName"] for field in fields}
+        time.sleep(0.5)
+        return field_mappings
+
+    def prepare_data(self, insert_list) -> list:
         processed_insert_list = []
         for item in insert_list:
             processed_item_dict = {}
             for key, value in item.items():
-                data_type = self.list_field_dict[key]['Data Type']
-                internal_name = self.list_field_dict[key]['Internal Name']
+                data_type = self.list_field_dict[key]["Data Type"]
+                internal_name = self.list_field_dict[key]["Internal Name"]
 
-                if data_type == 'Text':
+                if data_type == "Text":
                     if not isinstance(value, str):
                         value = str(value)
-                elif data_type == 'Number':
+                elif data_type == "Number":
                     if not isinstance(value, int) or not isinstance(value, float):
                         try:
                             value = float(value)
                         except ValueError:
                             value = None
-                elif data_type == 'DateTime':
+                elif data_type == "DateTime":
                     pass
-                elif data_type == 'Choice':
+                elif data_type == "Choice":
                     pass
-                elif data_type == 'Attachments':
+                elif data_type == "Attachments":
                     pass
                 else:
                     pass

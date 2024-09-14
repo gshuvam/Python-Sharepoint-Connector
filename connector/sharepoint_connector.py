@@ -26,4 +26,3 @@ class SharePointConnector:
 
         if response.status_code == 200:
             return response.json()['d']['GetContextWebInformation']['FormDigestValue']
-
