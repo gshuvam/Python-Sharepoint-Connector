@@ -1,9 +1,11 @@
 import sys
 import time
+import re
+import os
+import subprocess
 import customtkinter as ctk
 
 from auth.cache import CacheHandler
-from win32com.client import Dispatch
 import undetected_chromedriver as uc
 from gui.dialogs import PasswordDialog
 from logger.custom_logger import get_logger
@@ -147,15 +149,31 @@ class LoginHandler:
         return cookie_dict
     
     def __get_version_main():
-        def get_version_via_com(filename):
-            parser = Dispatch("Scripting.FileSystemObject")
-            try:
-                version = parser.GetFileVersion(filename)
-            except Exception:
-                return None
-            return version
+        paths = [
+            "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+            "/usr/bin/google-chrome",
+            r"C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+            r"C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe"
+        ]
 
-        paths = [r"C:\Program Files\Google\Chrome\Application\chrome.exe",
-                    r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe"]
-        version = list(filter(None, [get_version_via_com(p) for p in paths]))[0]
-        return (int(version.split('.')[0]))
+        version = list(filter(None, [get_version_via_subprocess(p) for p in paths]))
+        
+        if version:
+            return int(version[0].split('.')[0])
+        return None
+    
+    def get_version_via_subprocess(filename):
+        try:
+            if os.name == 'nt':
+                result = subprocess.run(['wmic', 'datafile', 'where', f'name="{filename}"', 'get', 'Version', '/value'],
+                                        stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, shell=True)
+                version = re.search(r'Version=([\d.]+)', result.stdout)
+                return version.group(1) if version else None
+
+            elif os.path.exists(filename):
+                result = subprocess.run(['strings', filename], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+                version = re.search(r'[\d.]+', result.stdout)
+                return version.group(0) if version else None
+
+        except Exception:
+            return None
