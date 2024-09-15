@@ -8,4 +8,6 @@ connector/__pycache__/
 gui/__pycache__/
 logger/__pycache__/
 sharepoint/__pycache__/
+sharepoint/list/__pycache__/
+sharepoint/common/__pycache__/
 utils/__pycache__/

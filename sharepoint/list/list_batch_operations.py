@@ -1,6 +1,6 @@
 import uuid
 from requests import Session
-from sharepoint.list_operations import ListOperations
+from sharepoint.list.list_operations import ListOperations
 from logger.custom_logger import get_logger
 
 class BatchOperations:
