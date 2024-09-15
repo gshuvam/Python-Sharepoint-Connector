@@ -31,10 +31,32 @@ cd sharepoint-connector
 
 Update the necessary configuration parameters such as SharePoint site URL, list names, and credentials in the script. You can use a .env file to store these.
 
-## Usage
+```
+TEST = str_to_bool(os.environ.get('TEST'))
+DEBUGGING = str_to_bool(os.environ.get('DEBUGGING'))
+ENABLE_CACHE = str_to_bool(os.environ.get('ENABLE_CACHE'))
+    
+if TEST:
+    site_url = os.environ.get('SITE_URL')
+    list_name = os.environ.get('LIST_NAME')
+    domain = os.environ.get('DOMAIN')
+    username = os.environ.get('USERNAME')
+    password = os.environ.get("PASSWORD")
+else:
+    site_url = os.environ.get('SITE_URL')
+    list_name = os.environ.get('LIST_NAME')
+    domain = os.environ.get("TEST_DOMAIN")
+    app = ctk.CTk()
+    username_dialog = InputDialog(app, 'Username', 'Enter Sharepoint Username')
+    username = username_dialog.get_input()
+    app.destroy()
 
-To create a session and connect to SharePoint, use the ```create_session()``` function. 
-Use the session object to call SharePoint REST API. Dont forget to obtain a digest value for ```POST``` operations. 
+cache_file = os.environ.get('CACHE_LOCATION')
+key_file = os.environ.get('KEY_LOCATION')
+```
+
+## Usage
+To establish a session for connecting to SharePoint, instantiate a ```SharePointConnector``` object. Use the ```SharePointConnector.session``` object to make calls to the SharePoint REST API. For ```POST``` operations, ensure you obtain a digest value, which can be accessed via ```SharePointConnector.digest_value```. Alternatively, you can use the snippet below:
 
 ```
 headers = {
@@ -46,7 +68,30 @@ response = session.post(f"{sharepoint_site_url}/_api/contextinfo", headers=heade
 request_digest = response.json()['d']['GetContextWebInformation']['FormDigestValue']
 
 ```
+### Get items from a SharePoint List
+```
+connector_obj = SharePointConnector(
+    site_url=site_url,
+    cookie_dict=LoginHandler(
+        site_url=site_url,
+        username=username,
+        password=password,
+        DEBUGGING=DEBUGGING,
+        cache_file=cache_file,
+        key_file=key_file,
+        domain=domain
+    ).authenticate(
+        ENABLE_CACHE=ENABLE_CACHE
+    )
+)
 
+list_items = List(
+        site_url=connector_obj.site_url,
+        list_name=list_name,
+        sharepoint_connector_object=connector_obj,
+    ).get_list_items()
+```
+### Upload attachments to a list
 ```
 headers = {
     "Accept": "application/json; odata=verbose",
@@ -63,6 +108,17 @@ for filename in attachment_list:
             data=f
         )
 ```
+OR
+```
+SharePointOperations.upload_attachments(
+    site_url=site_url,
+    source_name=list_name,
+    item_id=item_id,
+    attachment_list=attachment_list,
+    digest_value=connector_obj.digest_value,
+    session=connector_obj.session
+)
+```
 
 ## Error Handling
 
@@ -78,4 +134,4 @@ This project is licensed under the MIT License.
 
 ## Contact
 
-For any questions or suggestions, please contact shuvam1309@gmail.com.
+For any questions or suggestions, please contact [me](https://github.com/gshuvam).
