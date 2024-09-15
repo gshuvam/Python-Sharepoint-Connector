@@ -16,7 +16,7 @@ class ListOperations:
         required_cols["Id"] = {}
 
         headers = {"Accept": "application/json; odata=verbose"}
-        endpoint = f"{site_url}/_api/web/lists/getbytitle('{list_name}')/fields?$filter=Hidden eq false and ReadOnlyField eq false"
+        endpoint = f"{site_url}_api/web/lists/getbytitle('{list_name}')/fields?$filter=Hidden eq false and ReadOnlyField eq false"
 
         response = session.get(endpoint, headers=headers)
         response.raise_for_status()
@@ -40,7 +40,7 @@ class ListOperations:
     def get_list_property(
         site_url: str, list_name: str, session: requests.Session, property_name: str
     ) -> str:
-        endpoint = f"{site_url}/_api/web/lists/getbytitle('{list_name}')"
+        endpoint = f"{site_url}_api/web/lists/getbytitle('{list_name}')"
         headers = {
             "Accept": "application/json;odata=verbose",
             "Content-Type": "application/json;odata=verbose",
@@ -69,7 +69,7 @@ class ListOperations:
         site_url: str, list_name: str, session: requests.Session
     ) -> list[dict]:
         headers = {"Accept": "application/json; odata=verbose"}
-        endpoint = f"{site_url}/_api/web/lists/getbytitle('{list_name}')/items"
+        endpoint = f"{site_url}_api/web/lists/getbytitle('{list_name}')/items"
 
         all_items = []
         while endpoint:
@@ -99,7 +99,7 @@ class ListOperations:
         required_cols = {}
 
         headers = {"Accept": "application/json; odata=verbose"}
-        endpoint = f"{site_url}/_api/web/lists/getbytitle('{list_name}')/fields?$filter=Hidden eq false and ReadOnlyField eq false"
+        endpoint = f"{site_url}_api/web/lists/getbytitle('{list_name}')/fields?$filter=Hidden eq false and ReadOnlyField eq false"
 
         response = session.get(endpoint, headers=headers)
         response.raise_for_status()
@@ -132,7 +132,7 @@ class ListOperations:
         return data
 
     @staticmethod
-    def create_simplified_list(self, site_url, list_name, list_data, required_cols):
+    def get_simplified_list(self, site_url, list_name, list_data, required_cols):
         items_list = []
         for row in list_data:
             list_item_dict = {}

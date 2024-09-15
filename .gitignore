@@ -2,6 +2,7 @@
 *.ini
 dev.py
 cache/
+logs/
 __pycache__/
 auth/__pycache__/
 connector/__pycache__/

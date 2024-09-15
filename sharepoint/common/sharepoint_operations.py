@@ -11,7 +11,7 @@ class SharePointOperations:
     ) -> list:
         attachemnt_list = []
         headers = {"Accept": "application/json; odata=verbose"}
-        endpoint = f"{site_url}/_api/web/lists/getbytitle('{source_name}')/Items({item_id})/AttachmentFiles"
+        endpoint = f"{site_url}_api/web/lists/getbytitle('{source_name}')/Items({item_id})/AttachmentFiles"
 
         response = session.get(endpoint, headers=headers)
         response.raise_for_status()
@@ -36,7 +36,7 @@ class SharePointOperations:
         headers = {"Accept": "application/json; odata=verbose"}
 
         for filename in attachment_name_list:
-            endpoint = f"{site_url}/_api/web/lists/getbytitle('{source_name}')/Items({item_id})/AttachmentFiles('{filename}')/$value"
+            endpoint = f"{site_url}_api/web/lists/getbytitle('{source_name}')/Items({item_id})/AttachmentFiles('{filename}')/$value"
             response = session.get(endpoint, headers=headers)
             response.raise_for_status()
             if response.status_code == 200:
@@ -68,7 +68,7 @@ class SharePointOperations:
 
             with open(file, "rb") as f:
                 response = session.post(
-                    f"{site_url}/_api/web/lists/getbytitle('{source_name}')/Items({item_id})/AttachmentFiles/add(FileName='{file_name}')",
+                    f"{site_url}_api/web/lists/getbytitle('{source_name}')/Items({item_id})/AttachmentFiles/add(FileName='{file_name}')",
                     headers=headers,
                     data=f,
                 )
@@ -99,7 +99,7 @@ class SharePointOperations:
         }
         for filename in attachment_name_list:
             response = session.post(
-                f"{site_url}/_api/web/lists/getbytitle('{list_name}')/Items({item_id})/AttachmentFiles('{filename}')",
+                f"{site_url}_api/web/lists/getbytitle('{list_name}')/Items({item_id})/AttachmentFiles('{filename}')",
                 headers=headers,
             )
             response.raise_for_status()

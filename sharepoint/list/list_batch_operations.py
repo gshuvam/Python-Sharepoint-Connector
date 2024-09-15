@@ -13,7 +13,7 @@ class BatchOperations:
             "Accept": "application/json;odata=verbose",
             "Content-Type": "application/json;odata=verbose",
         }
-        response = session.post(f"{site_url}/_api/contextinfo", headers=headers)
+        response = session.post(f"{site_url}_api/contextinfo", headers=headers)
         if response.status_code == 200:
             return response.json()["d"]["GetContextWebInformation"]["FormDigestValue"]
         else:

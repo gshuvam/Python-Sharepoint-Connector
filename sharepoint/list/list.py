@@ -1,5 +1,4 @@
 import time
-import requests
 from logger.custom_logger import get_logger
 from connector.sharepoint_connector import SharePointConnector
 from sharepoint.common.sharepoint_operations import SharePointOperations
@@ -20,18 +19,18 @@ class BaseList:
         list_name: str,
         sharepoint_connector_object: SharePointConnector,
     ):
-        self.site_url = (site_url,)
-        self.list_name = (list_name,)
+        self.site_url = site_url
+        self.list_name = list_name
         self.session = sharepoint_connector_object.session
         self.digest_value = sharepoint_connector_object.digest_value
         self.list_item_dtype_property_name = "ListItemEntityTypeFullName"
-        self.list_data_type = self.get_list_property(self.list_item_property_name)
+        self.list_data_type = self.get_list_property(self.list_item_dtype_property_name)
         self.column_datatypes = self.__get_column_datatypes()
         self.logger = get_logger(self.__class__.__name__)
 
     def get_list_items(self, query=None) -> list:
         endpoint = (
-            f"{self.site_url}/_api/web/lists/getbytitle('{self.list_name}')/items"
+            f"{self.site_url}_api/web/lists/getbytitle('{self.list_name}')/items"
         )
         if query:
             endpoint += query
@@ -64,7 +63,7 @@ class BaseList:
         return all_items
 
     def get_list_property(self, property_name):
-        endpoint = f"{self.site_url}/_api/web/lists/getbytitle('{self.list_name}')"
+        endpoint = f"{self.site_url}_api/web/lists/getbytitle('{self.list_name}')"
         headers = {
             "Accept": "application/json;odata=verbose",
             "Content-Type": "application/json;odata=verbose",
@@ -83,7 +82,7 @@ class BaseList:
         required_cols["Id"] = {}
 
         headers = {"Accept": "application/json; odata=verbose"}
-        endpoint = f"{self.site_url}/_api/web/lists/getbytitle('{self.list_name}')/fields?$filter=Hidden eq false and ReadOnlyField eq false"
+        endpoint = f"{self.site_url}_api/web/lists/getbytitle('{self.list_name}')/fields?$filter=Hidden eq false and ReadOnlyField eq false"
 
         response = self.session.get(endpoint, headers=headers)
         response.raise_for_status()
@@ -107,7 +106,7 @@ class BaseList:
         required_cols = {}
 
         headers = {"Accept": "application/json; odata=verbose"}
-        endpoint = f"{self.site_url}/_api/web/lists/getbytitle('{self.list_name}')/fields?$filter=Hidden eq false and ReadOnlyField eq false"
+        endpoint = f"{self.site_url}_api/web/lists/getbytitle('{self.list_name}')/fields?$filter=Hidden eq false and ReadOnlyField eq false"
 
         response = self.session.get(endpoint, headers=headers)
         response.raise_for_status()
@@ -130,14 +129,14 @@ class BaseList:
 
 
 class List(BaseList):
-    def __init__(self, site_url: str, list_name: str, session: requests.Session, primary_column='Title', batch_size=50):
-        super().__init__(site_url, list_name, session)
+    def __init__(self, site_url: str, list_name: str, sharepoint_connector_object: SharePointConnector, primary_column='Title', batch_size=50):
+        super().__init__(site_url, list_name, sharepoint_connector_object)
         self.column_name_mappings = self.__get_column_name_mappings()
         self.primary_column = primary_column
         self.batch_size = batch_size
 
     def __get_column_name_mappings(self) -> dict:
-        endpoint = f"{self.site_url}/_api/web/lists/getbytitle('{self.list_name}')/fields?$filter=Hidden eq false and ReadOnlyField eq false"
+        endpoint = f"{self.site_url}_api/web/lists/getbytitle('{self.list_name}')/fields?$filter=Hidden eq false and ReadOnlyField eq false"
         headers = {
             "Accept": "application/json;odata=verbose",
             "Content-Type": "application/json;odata=verbose",
@@ -213,7 +212,7 @@ class List(BaseList):
                     payload[key] = value
 
             response = self.session.post(
-                f"{self.site_url}/_api/web/lists/getbytitle('{self.list_name}')/items",
+                f"{self.site_url}_api/web/lists/getbytitle('{self.list_name}')/items",
                 headers=headers,
                 json=payload,
             )
@@ -292,7 +291,7 @@ class List(BaseList):
             item_attachments = item_data.get("Attachment List", None)
 
             response = self.session.post(
-                f"{self.site_url}/_api/web/lists/getbytitle('{self.list_name}')/items({item_id})",
+                f"{self.site_url}_api/web/lists/getbytitle('{self.list_name}')/items({item_id})",
                 headers=headers,
                 json=payload,
             )
@@ -347,7 +346,7 @@ class List(BaseList):
                 self.logger.info("Items left for update: %s", total_items_to_delete)
 
             response = self.session.post(
-                f"{self.site_url}/_api/web/lists/getbytitle('{self.list_name}')/Items({item_id})",
+                f"{self.site_url}_api/web/lists/getbytitle('{self.list_name}')/Items({item_id})",
                 headers=headers
             )
             response.raise_for_status()
