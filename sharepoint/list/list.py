@@ -2,7 +2,7 @@ import time
 import requests
 from logger.custom_logger import get_logger
 from connector.sharepoint_connector import SharePointConnector
-from sharepoint_operations import SharePointOperations
+from sharepoint.common.sharepoint_operations import SharePointOperations
 
 class BaseList:
 
