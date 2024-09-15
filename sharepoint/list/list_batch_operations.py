@@ -5,10 +5,39 @@ from logger.custom_logger import get_logger
 
 class BatchOperations:
 
+    """
+    The `BatchOperations` class provides static methods for handling batch operations in SharePoint lists. This includes creating and managing batches for delete, insert, and update operations, as well as performing these operations in batches to optimize performance and reduce server load.
+
+    Static Methods:
+        - __get_request_digest(site_url: str, session: Session) -> str
+        - __create_delete_batch(site_url: str, list_name: str, item_ids: list, batch_guid: str) -> str
+        - delete_items_in_batches(site_url: str, list_name: str, items: list, session: Session, batch_size=100) -> None
+        - __create_insert_batch(site_url: str, list_name: str, insert_list: list, batch_guid: str, session: Session) -> str
+        - insert_items_in_batches(site_url: str, list_name: str, items: list, session: Session, batch_size=100) -> None
+        - __create_update_batch(site_url: str, list_name: str, update_dict: dict[str, list], batch_guid: str, session: Session) -> str
+        - update_items_in_batches(site_url: str, list_name: str, items: dict[str, list], session: Session, batch_size=100) -> None
+    """
+
     logger = get_logger('BatchOperations')
 
     @staticmethod
     def __get_request_digest(site_url: str, session: Session) -> str:
+
+        """
+        Retrieves the request digest value required for authenticated batch operations with SharePoint.
+
+        Parameters:
+            - site_url (str): The base URL of the SharePoint site.
+            - session (Session): An authenticated session object for making requests.
+
+        Returns:
+            - str: The request digest value.
+
+        Notes:
+            - This method is private and used internally to obtain the digest value necessary for batch operations.
+            - The digest value is required to authenticate requests made to SharePoint.
+        """
+
         headers = {
             "Accept": "application/json;odata=verbose",
             "Content-Type": "application/json;odata=verbose",
@@ -25,6 +54,24 @@ class BatchOperations:
     def __create_delete_batch(
         site_url: str, list_name: str, item_ids: list, batch_guid: str
     ) -> str:
+        
+        """
+        Creates a batch request for deleting items from a SharePoint list.
+
+        Parameters:
+            - site_url (str): The base URL of the SharePoint site.
+            - list_name (str): The name of the SharePoint list.
+            - item_ids (list): A list of item IDs to be deleted.
+            - batch_guid (str): A unique identifier for the batch request.
+
+        Returns:
+            - str: The body content of the batch request for deletion.
+
+        Notes:
+            - This method generates body of a batch request for deleting multiple items.
+            - The `batch_guid` ensures that the batch request is unique and traceable.
+        """
+
         changeset_guid = str(uuid.uuid4())
         batch_body = []
         batch_body.append(f"--batch_{batch_guid}")
@@ -54,7 +101,26 @@ class BatchOperations:
     @staticmethod
     def delete_items_in_batches(
         site_url: str, list_name: str, items: list, session: Session, batch_size=100
-    ):
+    ) -> None:
+        
+        """
+        Deletes items from a SharePoint list in batches.
+
+        Parameters:
+            - site_url (str): The base URL of the SharePoint site.
+            - list_name (str): The name of the SharePoint list.
+            - items (list): A list of items to be deleted, each item should include the ID.
+            - session (Session): An authenticated session object for making requests.
+            - batch_size (int, optional): The size of each batch request, default is 100.
+
+        Returns:
+            - None: This method doesn't return anything but performs batch delete operations.
+
+        Notes:
+            - The method handles the deletion of items in specified batch sizes to optimize performance.
+            - The `batch_size` parameter controls how many items are included in each batch request.
+        """
+
         batch_endpoint = f"{site_url}_api/$batch"
         headers = {
             "Accept": "application/json;odata=verbose",
@@ -99,6 +165,25 @@ class BatchOperations:
         batch_guid: str,
         session: Session,
     ) -> str:
+        
+        """
+        Creates a batch request for inserting items into a SharePoint list.
+
+        Parameters:
+            - site_url (str): The base URL of the SharePoint site.
+            - list_name (str): The name of the SharePoint list.
+            - insert_list (list): A list of dictionaries where each dictionary represents an item to be inserted.
+            - batch_guid (str): A unique identifier for the batch request.
+            - session (Session): An authenticated session object for making requests.
+
+        Returns:
+            - str: The body content of the batch request for insertion.
+
+        Notes:
+            - This method generates body of a batch request for inserting multiple items into the list.
+            - The `batch_guid` ensures the uniqueness of the batch request.
+        """
+
         changeset_guid = str(uuid.uuid4())
         insert_dict = {
             "__metadata": {
@@ -140,7 +225,26 @@ class BatchOperations:
     @staticmethod
     def insert_items_in_batches(
         site_url: str, list_name: str, items: list, session: Session, batch_size=100
-    ):
+    ) -> None:
+        
+        """
+        Inserts items into a SharePoint list in batches.
+
+        Parameters:
+            - site_url (str): The base URL of the SharePoint site.
+            - list_name (str): The name of the SharePoint list.
+            - items (list): A list of dictionaries where each dictionary represents an item to be inserted.
+            - session (Session): An authenticated session object for making requests.
+            - batch_size (int, optional): The size of each batch request, default is 100.
+
+        Returns:
+            - None: This method doesn't return anything but performs batch insert operations.
+
+        Notes:
+            - The method handles the insertion of items in specified batch sizes to improve efficiency.
+            - The `batch_size` parameter determines how many items are included in each batch request.
+        """
+
         batch_endpoint = f"{site_url}_api/$batch"
         headers = {
             "Accept": "application/json;odata=verbose",
@@ -185,6 +289,25 @@ class BatchOperations:
         batch_guid: str,
         session: Session,
     ) -> str:
+        
+        """
+        Creates a batch request for updating items in a SharePoint list.
+
+        Parameters:
+            - site_url (str): The base URL of the SharePoint site.
+            - list_name (str): The name of the SharePoint list.
+            - update_dict (dict[str, list]): A dictionary where the key is an item ID and the value is a list of fields to update.
+            - batch_guid (str): A unique identifier for the batch request.
+            - session (Session): An authenticated session object for making requests.
+
+        Returns:
+            - str: The body content of the batch request for updating.
+
+        Notes:
+            - This method generates body of a batch request for updating multiple items.
+            - The `batch_guid` ensures that the batch request is unique and traceable.
+        """
+
         changeset_guid = str(uuid.uuid4())
         insert_dict = {
             "__metadata": {
@@ -232,7 +355,26 @@ class BatchOperations:
         items: dict[str, list],
         session: Session,
         batch_size=100,
-    ):
+    ) -> None:
+        
+        """
+        Updates items in a SharePoint list in batches.
+
+        Parameters:
+            - site_url (str): The base URL of the SharePoint site.
+            - list_name (str): The name of the SharePoint list.
+            - items (dict[str, list]): A dictionary where the key is an item ID and the value is a list of fields to update.
+            - session (Session): An authenticated session object for making requests.
+            - batch_size (int, optional): The size of each batch request, default is 100.
+
+        Returns:
+            - None: This method doesn't return anything but performs batch update operations.
+
+        Notes:
+            - The method handles the updating of items in specified batch sizes to optimize performance.
+            - The `batch_size` parameter controls how many updates are included in each batch request.
+        """
+
         def dict_batches(input_dict, batch_size):
             items = list(input_dict.items())
             for i in range(0, len(items), batch_size):
