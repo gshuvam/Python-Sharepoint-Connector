@@ -15,7 +15,7 @@ Before you begin, ensure you have the following installed:
 You can install the required libraries using pip:
 
 ```bash
-pip install requests selenium undetected-chromedriver
+pip install -r 'requirements.txt'
 ```
 
 ## Setup

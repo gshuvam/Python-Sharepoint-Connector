@@ -1,5 +1,6 @@
 .env
 *.ini
+*.ipynb
 dev.py
 cache/
 logs/
