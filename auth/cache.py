@@ -29,10 +29,11 @@ class CacheHandler:
         decryptor = Fernet(self.encryption_key)
         return decryptor.decrypt(data)
     
-    def save_cache(self, username, cookies):
+    def save_cache(self, username, data, data_type):
         cache_data = {
             'username': username,
-            'cookies': cookies,
+            'data': data,
+            'data_type': data_type,
             'timestamp': time.time()
         }
         serialized_data = pickle.dumps(cache_data)
@@ -50,11 +51,11 @@ class CacheHandler:
         
         return None
     
-    def validate_cache(self, cache_data):
+    def validate_cookies(self, cache_data):
         cookie_dict = None
         
         if cache_data:
-            cookie_dict = cache_data['cookies']
+            cookie_dict = cache_data['data']
             session = requests.Session()
             for name, value in cookie_dict.items():
                 session.cookies.set(name, value)
@@ -66,3 +67,21 @@ class CacheHandler:
             if response.status_code == 200:
                 return cookie_dict
         return None
+    
+    def validate_token(self, cache_data):
+        auth_token = None
+        session = None
+        headers = {"Accept": "application/json; odata=verbose"}
+        
+        if cache_data:
+            auth_token = cache_data['data']
+            headers.update({"Authorization": f"Bearer {auth_token}"})
+            session = requests.Session()
+        
+        if session:
+            endpoint = f"{self.domain}/_api/web/"
+            response = session.get(endpoint, headers=headers)
+            if response.status_code == 200:
+                return auth_token
+        return None
+
