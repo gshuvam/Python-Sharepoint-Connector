@@ -1,14 +1,36 @@
 import os
 import shutil
 from datetime import datetime
-# from logger.custom_logger import get_logger
+from logger.custom_logger import get_logger
 from utils.tools import str_to_bool
 
 class Utils:
-    # logger = get_logger('Utils')
+    """
+    A utility class providing various static methods for data transformation, list comparison, 
+    and folder management.
+
+    Methods:
+        dict_to_tuple(d): Converts a dictionary to a tuple.
+        prepare_data(item_dict, required_col_dict): Prepares and formats data for insertion based on column mappings.
+        get_list_diff(a, b, required_destination_cols, primary_key): Compares two lists and identifies items to insert and update.
+        compare_list_items(a, b): Compares two lists and returns their differences.
+        clear_folder(folder_path): Clears all files in the specified folder.
+    """
+
+    logger = get_logger('Utils')
 
     @staticmethod
     def dict_to_tuple(d):
+        """
+        Converts a dictionary to a tuple format.
+
+        Args:
+            d (dict): The dictionary to convert.
+
+        Returns:
+            tuple: A tuple representation of the dictionary, where each item from the dictionary is converted accordingly.
+        """
+
         list_dict = []
         for key, value in sorted(d.items()):
             if key != 'Id':
@@ -21,6 +43,17 @@ class Utils:
 
     @staticmethod
     def prepare_data(item_dict, required_col_dict):
+        """
+        Prepares data for insertion by mapping items from the given dictionary to required columns.
+
+        Args:
+            item_dict (dict): The dictionary containing item data.
+            required_col_dict (dict): The dictionary defining the required columns and their mappings.
+
+        Returns:
+            list: A list containing the prepared data for insertion based on the required columns.
+        """
+
         insert_item = {}
         try:
             for key, value in item_dict.items():
@@ -53,6 +86,21 @@ class Utils:
 
     @staticmethod
     def get_list_diff(a, b, required_destination_cols, primary_key = 'Requirement Id'):
+        """
+        Compares two lists of dictionaries and determines items to insert and update based on a primary key.
+
+        Args:
+            a (list): The list representing the source data.
+            b (list): The list representing the destination data.
+            required_destination_cols (list): A list of required destination columns for the comparison.
+            primary_key (str, optional): The primary key to match between the two lists (default is 'Requirement Id').
+
+        Returns:
+            tuple: 
+                - list: The items to insert.
+                - list: The items to update.
+        """
+
         # required_destination_cols['Requirement Id']['Internal Name']
         dict_b = {item[primary_key]: item for item in b}
         inserts = []
@@ -99,6 +147,17 @@ class Utils:
 
     @staticmethod
     def compare_list_items(a, b):
+        """
+        Compares two lists and returns their differences.
+
+        Args:
+            a (list): The first list to compare.
+            b (list): The second list to compare.
+
+        Returns:
+            list: The items that are different between the two lists.
+        """
+
         set_a = set(Utils.dict_to_tuple(d) for d in a)
         set_b = set(Utils.dict_to_tuple(d) for d in b)
 
@@ -108,6 +167,16 @@ class Utils:
 
     @staticmethod
     def clear_folder(folder_path):
+        """
+        Clears all files in the specified folder path.
+
+        Args:
+            folder_path (str): The path of the folder to clear.
+
+        Actions:
+            - Deletes all files in the specified folder.
+        """
+
         for filename in os.listdir(folder_path):
             file_path = os.path.join(folder_path, filename)
             try:
